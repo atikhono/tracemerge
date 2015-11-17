@@ -8,9 +8,8 @@ def get_offset(lines):
     for l in xrange(len(lines)):
         m = re.search('^>+', lines[l])
         if m:
-            break;
-
-    return len(m.group(0))
+            return len(m.group(0))
+    return None
 
 
 def line_exec(l, off):
@@ -33,6 +32,9 @@ def process(files):
         with open(f, 'r') as fd:
             f2_lines = [l.rstrip() for l in fd.readlines()]
 
+        if len(f1_lines) != len(f2_lines):
+            print "Number of lines in %s and %s does not match" % (files[0], files[1])
+            quit()
         f1_lines = process_2(f1_lines, f2_lines)
 
     return f1_lines
@@ -43,6 +45,9 @@ def process_2(f1_lines, f2_lines):
 
     o1 = get_offset(f1_lines)
     o2 = get_offset(f2_lines)
+    if o1 is None or o2 is None:
+        print "No trace cover offset ('^>+') found in file"
+        quit()
     o = max(o1, o2)
 
     for l in xrange(len(f1_lines)):
@@ -104,10 +109,6 @@ def main():
     parser = argparse.ArgumentParser(description='Merge trace coverage reports')
     parser.add_argument('files', metavar='file', type=path_to_file, nargs='+', help='coverage report files to merge')
     args = parser.parse_args()
-
-    if len(args.files) < 2:
-        print "Nothing to be done for %s" % args.files[0]
-        quit()
 
     # Remove duplicate files from the arg list
     for l in process(list(set(args.files))):
