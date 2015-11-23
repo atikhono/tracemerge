@@ -65,8 +65,7 @@ class CoverReport(object):
             if m:
                 return len(m.group(0))
 
-        print "No trace cover offset ('^>+') found in file %s" % self.fname
-        quit()
+        raise Exception("Trace coverage offset ('^>+') not found in file %s" % self.fname)
 
     def line_exec(self, lnum):
         l = self.flines[lnum]
@@ -95,8 +94,7 @@ class CoverReport(object):
         f2_lines = other.flines
 
         if len(f1_lines) != len(f2_lines):
-            print "Number of lines in %s and %s does not match" % (f1_name, f2_name)
-            quit()
+            raise Exception("Number of lines does not match in files %s and %s" % (f1_name, f2_name))
 
     def merge(self, other):
         self.check(other)
@@ -143,7 +141,7 @@ class CoverReport(object):
                         print "ValueError in '%s' + '%s'" % (f1_line[0:o1][:-1].lstrip(), f2_line[0:o2][:-1].lstrip())
                         quit()
                 else:
-                    print "Don't know how to process lines at %s:\n'%s'\n'%s'" % (lnum + 1, f1_line, f2_line)
+                    raise Exception("Don't know how to process lines:\n'%s'\n'%s\n\tat %s'" % (f1_line, f2_line, lnum + 1))
                     quit()
 
             else:
@@ -164,14 +162,17 @@ class CoverReport(object):
 
 
 def process(files):
-    cr_1 = CoverReport(files[0])
+    try:
+        cr_1 = CoverReport(files[0])
 
-    for f in files[1:]:
-        cr_2 = CoverReport(f)
-        cr_1.merge(cr_2)
+        for f in files[1:]:
+            cr_2 = CoverReport(f)
+            cr_1.merge(cr_2)
 
-    return cr_1
-
+        return cr_1
+    except Exception as e:
+        print "%s: %s" % (os.path.basename(__file__), e)
+        quit()
 
 def path_to_file(path):
     if os.access(path, os.R_OK):
